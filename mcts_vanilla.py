@@ -4,7 +4,11 @@ from random import choice
 from math import sqrt, log
 
 #num_nodes = 1000
-num_nodes = 10
+#num_nodes = 100
+#num_nodes = 10
+num_nodes = 5
+#num_nodes = 2
+#num_nodes = 1
 explore_faction = 2.
 
 def traverse_nodes(node, board, state, identity):
@@ -101,17 +105,6 @@ def backpropagate(node, won):
 
 
 
-"""def tree_scale(node):
-    tree_string = 0
-    if node.untried_actions:
-        return 1
-    else:
-        # recursively search children of curr node
-        for move in board.legal_actions(state):
-            return 1+tree_scale(node.child_nodes[move], board, state, identity)"""
-
-
-
 def think(board, state):
     """ Performs MCTS by sampling games and calling the appropriate functions to construct the game tree.
 
@@ -144,26 +137,37 @@ def think(board, state):
         leaf_node = traverse_nodes(node, board, sampled_game, identity_of_bot)
         
         # EXPAND
+        # expand selected leaf by exploring a new action
         new_node = expand_leaf(leaf_node, board, sampled_game)
         sampled_expand = board.next_state(sampled_game, new_node.parent_action)
 
         # ROLLOUT
+        # play rest of the game after new action
         sampled_rollout = rollout(board, sampled_expand)
 
         # BACKPROPAGATE
+        # propagate results of rollout back up the tree
         points_values = board.points_values(sampled_rollout)
         if points_values[identity_of_bot] > 0:
+            print("mcts won!")
             won = True
         else:
+            print("mcts lost!")
             won = False
         backpropagate(new_node, won)
 
+        #print(node.tree_to_string(horizon=10, indent=1))
     
-    # Return an action, typically the most frequently used action (from the root) or the action with the best
-    # estimated win rate.
+    # ===============
+    #  RETURN ACTION 
+    # ===============
 
-    #return None
+    # find the best child 
+    best_node = None
+    for i in leaf_node.child_nodes:
+        if best_node == None:
+            best_node = leaf_node.child_nodes[i]
+        elif leaf_node.child_nodes[i].wins > best_node.wins:
+            best_node = leaf_node.child_nodes[i]
 
-    #COMPUTE/RETURN BEST_CHOICE
-
-    return choice(board.legal_actions(state))
+    return best_node.parent_action
