@@ -6,9 +6,8 @@ from math import sqrt, log
 #num_nodes = 1000
 #num_nodes = 100
 #num_nodes = 10
-num_nodes = 5
-#num_nodes = 2
-#num_nodes = 1
+#num_nodes = 5
+num_nodes = 15
 explore_faction = 2.
 
 def traverse_nodes(node, board, state, identity):
@@ -36,7 +35,6 @@ def traverse_nodes(node, board, state, identity):
 
 
 
-
 def expand_leaf(node, board, state):
     """ Adds a new leaf to the tree by creating a new child node for the given node.
 
@@ -48,7 +46,7 @@ def expand_leaf(node, board, state):
     Returns:    The added child node.
 
     """
-
+    
     # select an untried action
     action = node.untried_actions[0]
     node.untried_actions.remove(action)
@@ -59,8 +57,7 @@ def expand_leaf(node, board, state):
 
     # return newly created node
     return new_node
-
-
+    
 
 
 def rollout(board, state):
@@ -96,9 +93,13 @@ def backpropagate(node, won):
         node.wins += 1
 
     # recursively trace backwards until root
-    if node.parent != None:
+    if node.parent == None:
+        #print("root found!")
         return
     else:
+        #print("me: "+str(node.wins)+" / "+str(node.visits))
+        #print("parent: "+str(node.parent.wins)+" / "+str(node.parent.visits))
+        #print("")
         return backpropagate(node.parent, won)
 
 
@@ -132,8 +133,8 @@ def think(board, state):
 
         # SELECT
         # set node to leaf returned by selection
-        leaf_node = traverse_nodes(node, board, sampled_game, identity_of_bot)
-        
+        leaf_node = traverse_nodes(node, board, sampled_game, identity_of_bot)        
+
         # EXPAND
         # expand selected leaf by exploring a new action
         new_node = expand_leaf(leaf_node, board, sampled_game)
@@ -157,13 +158,20 @@ def think(board, state):
     #  RETURN ACTION 
     # ===============
 
+    #print(root_node)
+    #print("root: "+str(root_node.wins)+" / "+str(root_node.visits))
+
     # find the best child
     best_node = None
     for i in leaf_node.child_nodes:
+
         if best_node == None:
             best_node = leaf_node.child_nodes[i]
+
         elif leaf_node.child_nodes[i].wins > best_node.wins:
             best_node = leaf_node.child_nodes[i]
 
     # return best child
     return best_node.parent_action
+
+    
