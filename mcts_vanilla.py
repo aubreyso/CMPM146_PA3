@@ -23,10 +23,6 @@ def traverse_nodes(node, board, state, identity):
     Returns:        A node from which the next stage of the search can proceed.
 
     """
-    # Hint: return leaf_node
-
-    # increment count for how many times this node has been visited
-    node.visits += 1
 
     # if curr node is a leaf (has untried actions)
     if node.untried_actions:
@@ -52,7 +48,6 @@ def expand_leaf(node, board, state):
     Returns:    The added child node.
 
     """
-    # Hint: return new_node
 
     # select an untried action
     action = node.untried_actions[0]
@@ -94,10 +89,13 @@ def backpropagate(node, won):
         won:    An indicator of whether the bot won or lost the game.
 
     """
+
+    # increment node visits and wins
     node.visits += 1
     if won:
         node.wins += 1
 
+    # recursively trace backwards until root
     if node.parent != None:
         return
     else:
@@ -149,20 +147,17 @@ def think(board, state):
         # propagate results of rollout back up the tree
         points_values = board.points_values(sampled_rollout)
         if points_values[identity_of_bot] > 0:
-            print("mcts won!")
             won = True
         else:
-            print("mcts lost!")
             won = False
         backpropagate(new_node, won)
 
-        #print(node.tree_to_string(horizon=10, indent=1))
     
     # ===============
     #  RETURN ACTION 
     # ===============
 
-    # find the best child 
+    # find the best child
     best_node = None
     for i in leaf_node.child_nodes:
         if best_node == None:
@@ -170,4 +165,5 @@ def think(board, state):
         elif leaf_node.child_nodes[i].wins > best_node.wins:
             best_node = leaf_node.child_nodes[i]
 
+    # return best child
     return best_node.parent_action
