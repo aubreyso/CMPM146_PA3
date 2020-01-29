@@ -6,8 +6,9 @@ from math import sqrt, log
 #num_nodes = 1000
 #num_nodes = 100
 #num_nodes = 10
+num_nodes = 8
 #num_nodes = 5
-num_nodes = 15
+#num_nodes = 2
 explore_faction = 2.
 
 def traverse_nodes(node, board, state, identity):
@@ -25,12 +26,20 @@ def traverse_nodes(node, board, state, identity):
 
     # if curr node is a leaf (has untried actions)
     if node.untried_actions:
+        #print("if")
         return node
 
     # else recursively traverse_nodes to find a leaf
     else:
+        best_child = None
+        #print("else")
         # recursively search children of curr node
         for move in board.legal_actions(state):
+            '''if best_child == None:
+                best_child = node.child_nodes[move]
+            elif (node.child_nodes[move].wins/node.child_nodes[move].visits) > (best_child.wins/best_child.visits):
+                best_child = node.child_nodes[move]
+        return traverse_nodes(node.child_nodes[move], board, state, identity)'''
             return traverse_nodes(node.child_nodes[move], board, state, identity)
 
 
@@ -94,12 +103,8 @@ def backpropagate(node, won):
 
     # recursively trace backwards until root
     if node.parent == None:
-        #print("root found!")
         return
     else:
-        #print("me: "+str(node.wins)+" / "+str(node.visits))
-        #print("parent: "+str(node.parent.wins)+" / "+str(node.parent.visits))
-        #print("")
         return backpropagate(node.parent, won)
 
 
@@ -158,18 +163,19 @@ def think(board, state):
     #  RETURN ACTION 
     # ===============
 
-    #print(root_node)
-    #print("root: "+str(root_node.wins)+" / "+str(root_node.visits))
-
     # find the best child
     best_node = None
-    for i in leaf_node.child_nodes:
+
+    for i in root_node.child_nodes:
 
         if best_node == None:
-            best_node = leaf_node.child_nodes[i]
+            best_node = root_node.child_nodes[i]
 
-        elif leaf_node.child_nodes[i].wins > best_node.wins:
-            best_node = leaf_node.child_nodes[i]
+        best_node_winrate = best_node.wins/best_node.visits
+        child_node_winrate = root_node.child_nodes[i].wins/root_node.child_nodes[i].visits
+
+        if child_node_winrate > best_node_winrate:
+            best_node = root_node.child_nodes[i]
 
     # return best child
     return best_node.parent_action
