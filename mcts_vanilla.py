@@ -3,7 +3,8 @@ from mcts_node import MCTSNode
 from random import choice
 from math import sqrt, log
 
-num_nodes = 1000
+#num_nodes = 1000
+num_nodes = 10
 explore_faction = 2.
 
 def traverse_nodes(node, board, state, identity):
@@ -18,19 +19,22 @@ def traverse_nodes(node, board, state, identity):
     Returns:        A node from which the next stage of the search can proceed.
 
     """
+    # Hint: return leaf_node
+
+    # increment count for how many times this node has been visited
     node.visits += 1
 
-    # if curr node if a leaf (has untried actions)
+    # if curr node is a leaf (has untried actions)
     if node.untried_actions:
         return node
 
     # else recursively traverse_nodes to find a leaf
     else:
-        # untried_actions empty
+        # recursively search children of curr node
         for move in board.legal_actions(state):
             return traverse_nodes(node.child_nodes[move], board, state, identity)
-    
-    # Hint: return leaf_node
+
+
 
 
 def expand_leaf(node, board, state):
@@ -44,8 +48,20 @@ def expand_leaf(node, board, state):
     Returns:    The added child node.
 
     """
-    pass
     # Hint: return new_node
+
+    # select an untried action
+    action = node.untried_actions[0]
+    node.untried_actions.remove(action)
+
+    # create a new child with selected action
+    new_node = MCTSNode(parent=node, parent_action=action, action_list=board.legal_actions(state))
+    node.child_nodes[action] = new_node
+
+    # return newly created node
+    return new_node
+
+
 
 
 def rollout(board, state):
@@ -56,7 +72,14 @@ def rollout(board, state):
         state:  The state of the game.
 
     """
-    pass
+
+    # randomly play until game completed
+    while not board.is_ended(state):
+        action = choice(board.legal_actions(state))
+        state = board.next_state(state, action)
+    
+    # return whether the rollout game was a win or loss
+    return state
 
 
 def backpropagate(node, won):
@@ -67,7 +90,26 @@ def backpropagate(node, won):
         won:    An indicator of whether the bot won or lost the game.
 
     """
-    pass
+    node.visits += 1
+    if won:
+        node.wins += 1
+
+    if node.parent != None:
+        return
+    else:
+        return backpropagate(node.parent, won)
+
+
+
+"""def tree_scale(node):
+    tree_string = 0
+    if node.untried_actions:
+        return 1
+    else:
+        # recursively search children of curr node
+        for move in board.legal_actions(state):
+            return 1+tree_scale(node.child_nodes[move], board, state, identity)"""
+
 
 
 def think(board, state):
@@ -83,18 +125,45 @@ def think(board, state):
     identity_of_bot = board.current_player(state)
     root_node = MCTSNode(parent=None, parent_action=None, action_list=board.legal_actions(state))
 
+    #print(root_node.tree_to_string(horizon=3, indent=2))
+
     for step in range(num_nodes):
+
         # Copy the game for sampling a playthrough
         sampled_game = state
 
         # Start at root
         node = root_node
 
-        # Do MCTS - This is all you!
-        
-        leaf_node = traverse_nodes(node, board, state, identity_of_bot)
-        
+        # ==========
+        #  RUN MCTS 
+        # ==========
 
+        # SELECT
+        # set node to leaf returned by selection
+        leaf_node = traverse_nodes(node, board, sampled_game, identity_of_bot)
+        
+        # EXPAND
+        new_node = expand_leaf(leaf_node, board, sampled_game)
+        sampled_expand = board.next_state(sampled_game, new_node.parent_action)
+
+        # ROLLOUT
+        sampled_rollout = rollout(board, sampled_expand)
+
+        # BACKPROPAGATE
+        points_values = board.points_values(sampled_rollout)
+        if points_values[identity_of_bot] > 0:
+            won = True
+        else:
+            won = False
+        backpropagate(new_node, won)
+
+    
     # Return an action, typically the most frequently used action (from the root) or the action with the best
     # estimated win rate.
-    return None
+
+    #return None
+
+    #COMPUTE/RETURN BEST_CHOICE
+
+    return choice(board.legal_actions(state))
